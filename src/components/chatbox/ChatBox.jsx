@@ -21,7 +21,7 @@ export const ChatBox = ({
   item: { fname, lname, messages, profile, sender },
   updateMessages,
 }) => {
-  const { currentUser } = useContext(AuthContext);
+  const { fbUser } = useContext(AuthContext);
 
   const [messageText, setMessageText] = useState();
 
@@ -32,7 +32,7 @@ export const ChatBox = ({
 
   const sendMessage = async () => {
     const requestData = {
-      pageAccessToken: currentUser.pages[0].access_token,
+      pageAccessToken: fbUser.pages[0].access_token,
       senderId: sender,
       message: {
         text: messageText,
@@ -78,7 +78,7 @@ export const ChatBox = ({
                   <Chat message={message.message.text} />
 
                   <small className={styles.date}>
-                    {currentUser && currentUser.name}
+                    {fbUser && fbUser.name}
                     {" - "}
                     {new Date(message.date).toLocaleString(
                       "en-US",
@@ -89,8 +89,7 @@ export const ChatBox = ({
                 <div className={styles.avatar}>
                   <Avatar
                     src={
-                      currentUser &&
-                      (currentUser.picture?.data?.url ?? currentUser.picture)
+                      fbUser && (fbUser.picture?.data?.url ?? fbUser.picture)
                     }
                   />
                 </div>

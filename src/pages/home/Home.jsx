@@ -14,54 +14,18 @@ import { useContext } from "react";
 import { AuthContext } from "../authentication/AuthProvider";
 import logo from "../../assets/White.png";
 import axios from "axios";
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Snackbar,
-  Typography,
-} from "@material-ui/core";
+import { Box, Snackbar, Typography } from "@material-ui/core";
 import notificationSound from "../../assets/sounds/notification.mp3";
 import config from "../../environments/config";
+import { Alert } from "@material-ui/lab";
 
 const Home = ({ history }) => {
-  // const [currentUser, setCurrentUser] = useState();
-  const { currentUser, setCurrentUser } = useContext(AuthContext);
+  const { currentAgent, setCurrentAgent, fbUser, setFBUser } =
+    useContext(AuthContext);
   const [conversations, setConversations] = useState([]);
   const [selected, setSelected] = useState(null);
   const [showSocketConnected, setShowSocketConnected] = useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const audioRef = useRef(null);
-
-  const refreshPageAccessToken = () => {
-    const { userID, accessToken } = currentUser;
-    axios
-      .get(
-        `https://graph.facebook.com/${userID}/accounts?access_token=${accessToken}`
-      )
-      .then((pagesRes) => {
-        const pages = pagesRes.data.data;
-        const userObj = {
-          ...currentUser,
-          accessToken,
-          pages,
-        };
-        axios
-          .post(config.API_URL + "auth", userObj)
-          .then((response) => {
-            setCurrentUser(response.data);
-            localStorage.setItem("user", JSON.stringify(userObj));
-            localStorage.setItem("token", accessToken);
-          })
-          .catch((err) => console.log(err));
-      })
-      .catch((err) => console.log(err))
-      .finally(() => {});
-  };
 
   const updateMessages = (message, sender) => {
     let tempSelected = { ...selected };
@@ -117,16 +81,7 @@ const Home = ({ history }) => {
       }
     });
     getMessages();
-    refreshPageAccessToken();
   }, []);
-
-  const logout = () => {
-    setShowLogoutDialog(false);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    setCurrentUser(null);
-    history.replace("/login");
-  };
 
   return (
     <div className={styles.container}>
@@ -156,7 +111,7 @@ const Home = ({ history }) => {
               className="fa fa-line-chart fa-lg ml-1 m-10"
             ></i>
           </ListItem>
-          <ListItem button onClick={() => setShowLogoutDialog(true)}>
+          <ListItem button onClick={() => history.replace("/connect")}>
             <i
               style={{ color: "white" }}
               className="fa fa-sign-out fa-lg ml-1"
@@ -165,12 +120,12 @@ const Home = ({ history }) => {
         </List>
         <List>
           <ListItem>
-            {!currentUser && <AccountCircle className={styles.icon} />}
+            {!fbUser && <AccountCircle className={styles.icon} />}
           </ListItem>
           <ListItem>
-            {currentUser && (
+            {fbUser && (
               <img
-                src={currentUser.picture?.data?.url ?? currentUser.picture}
+                src={fbUser.picture?.data?.url ?? fbUser.picture}
                 className="rounded-circle"
                 height="30px"
                 width="30px"
@@ -250,33 +205,15 @@ const Home = ({ history }) => {
         open={showSocketConnected}
         autoHideDuration={2000}
         onClose={() => setShowSocketConnected(false)}
-        message={
-          "Connection Successful! You are now online and can receive messages!"
-        }
-      ></Snackbar>
-      <Dialog
-        open={showLogoutDialog}
-        onClose={() => setShowLogoutDialog(false)}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {"Are you sure you want to Logout?"}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Logging out with also remove the page permissions granted by you for
-            managing your connected facebook page. You will need to grant those
-            permissions again when you log in.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowLogoutDialog(false)}>No</Button>
-          <Button onClick={logout} autoFocus>
-            Yes
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Alert
+          variant="filled"
+          onClose={() => setShowSocketConnected(false)}
+          severity="success"
+        >
+          Connection Successful! You are now online and can receive messages!
+        </Alert>
+      </Snackbar>
       <audio ref={audioRef}>
         <source
           src="https://cdn.pixabay.com/audio/2022/10/04/audio_79bd7a4d75.mp3"

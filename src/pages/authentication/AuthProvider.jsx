@@ -1,19 +1,31 @@
+import axios from "axios";
 import React, { createContext, useState, useEffect } from "react";
+import config from "../../environments/config";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null); // null represents the initial loading state
+  const [currentAgent, setCurrentAgent] = useState(null); // null represents the initial loading state
+  const [fbUser, setFBUser] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const getConnectedFBPageData = async () => {
+    try {
+      let { data } = await axios.get(config.API_URL + "fb/data");
+      setFBUser(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   useEffect(() => {
     // Simulate an asynchronous check for authentication
-    const checkAuthStatus = () => {
+    const checkAuthStatus = async () => {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (token && user) {
-        setCurrentUser(user);
+      const { data: user } = await axios.get(config.API_URL + "auth/verify");
+      if (user) {
+        setCurrentAgent(user);
+        getConnectedFBPageData();
       }
       setLoading(false);
       // Update the authentication status based on the presence of a token
@@ -23,7 +35,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, setCurrentUser }}>
+    <AuthContext.Provider
+      value={{ currentAgent, setCurrentAgent, fbUser, setFBUser }}
+    >
       {loading ? (
         <div>Loading...</div> // Render a loader while checking authentication status
       ) : (
